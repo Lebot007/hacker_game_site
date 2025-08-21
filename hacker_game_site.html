@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec Academy - Simulador de Ethical Hacking</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+        :root {
+            --primary-green: #00ff88;
+            --secondary-green: #00cc66;
+            --dark-green: #004d1a;
+            --accent-cyan: #00ffff;
+            --accent-orange: #ff6b35;
+            --accent-purple: #8b5cf6;
+            --dark-bg: #0a0f14;
+            --darker-bg: #050810;
+            --card-bg: rgba(10, 15, 20, 0.95);
+            --border-glow: rgba(0, 255, 136, 0.3);
+            --text-primary: #e0e6ed;
+            --text-secondary: #94a3b8;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            --success: #10b981;
+            --ai-blue: #3b82f6;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            background: linear-gradient(135deg, var(--darker-bg) 0%, var(--dark-bg) 40%, #1a1f2e 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        .cyber-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            z-index: -2;
+        }
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.08;
+            z-index: -1;
+        }
+        .header {
+            text-align: center;
+            padding: 2.5rem;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(10, 15, 20, 0.95) 100%);
+            border-bottom: 2px solid var(--primary-green);
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.2);
+            position: relative;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-green), var(--accent-cyan), var(--primary-green), transparent);
+            animation: scan 3s ease-in-out infinite;
+        }
+        @keyframes scan {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary-green), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.3)); }
+            to { filter: drop-shadow(0 0 20px rgba(0, 255, 136, 0.6)); }
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .terminal {
+            background: var(--card-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 0;
+            box-shadow:
+                0 0 30px rgba(0, 255, 136, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        .terminal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary-green), transparent);
+            animation: scan-terminal 4s ease-in-out infinite;
+        }
+        @keyframes scan-terminal {
+            0%, 100% { opacity: 0; transform: translateX(-100%); }
+            50% { opacity: 1; transform: translateX(100%); }
+        }
+        .terminal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 255, 255, 0.05));
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+            backdrop-filter: blur(5px);
+        }
+        .terminal-title {
+            color: var(--primary-green);
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .terminal-title::before {
+            content: '⚡';
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        .terminal-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
+            border: none;
+            color: var(--darker-bg);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        .btn:hover::before {
+            left: 100%;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+            filter: brightness(1.1);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn.btn-beginner {
+            background: linear-gradient(135deg, var(--accent-purple), #a855f7);
+        }
+        .btn.btn-beginner:hover {
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+        }
+        .btn.btn-ai {
+            background: linear-gradient(135deg, var(--ai-blue), #60a5fa);
+        }
+        .btn.btn-ai:hover {
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        .btn.btn-ai.active {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            animation: ai-pulse 2s infinite;
+        }
+        @keyframes ai-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.8); }
+        }
+        .btn:disabled {
+            background: rgba(148, 163, 184, 0.2);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            padding: 2rem;
+        }
+        .challenge-panel, .status-panel {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 10px;
+            padding: 2rem;
+            backdrop-filter: blur(5px);
+            position: relative;
+        }
+        .challenge-panel::before,
+        .status-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-green), var(--accent-cyan), var(--primary-green));
+            border-radius: 10px 10px 0 0;
+        }
+        .challenge-title {
+            color: var(--accent-cyan);
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .challenge-title::before {
+            content: '🎯';
+        }
+        .challenge-description {
+            line-height: 1.7;
+            margin-bottom: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        .ai-assistant {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(96, 165, 250, 0.1));
+            border: 1px solid var(--ai-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            display: none;
+            position: relative;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .ai-assistant.active {
+            display: block;
+        }
+        .ai-assistant::before {
+            content: '🤖';
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: var(--card-bg);
+            padding: 0 0.5rem;
+            font-size: 1.2rem;
+        }
+        .ai-assistant h4 {
+            color: var(--ai-blue);
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+        .ai-suggestion {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 0.8rem 0;
+            border-left: 3px solid var(--ai-blue);
+        }
+        .ai-suggestion code {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-cyan);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.9rem;
+        }
+        .ai-step-indicator {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .ai-step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: var(--ai-blue);
+            border: 2px solid var(--ai-blue);
+            opacity: 0.5;
+        }
+        .ai-step.active {
+            opacity: 1;
+            background: var(--ai-blue);
+            color: white;
+        }
+        .ai-step.completed {
+            opacity: 1;
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+        .input-group {
+            margin: 1.5rem 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 0.8rem;
+            color: var(--accent-cyan);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            color: var(--text-primary);
+            font-family: inherit;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+        .hint-box {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(251, 191, 36, 0.1));
+            border: 1px solid var(--accent-orange);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            display: none;
+            position: relative;
+        }
+        .hint-box::before {
+            content: '💡';
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: var(--card-bg);
+            padding: 0 0.5rem;
+        }
+        .beginner-guide {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.1));
+            border: 1px solid var(--accent-purple);
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .beginner-guide h4 {
+            color: var(--accent-purple);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .beginner-guide h4::before {
+            content: '🎓';
+        }
+        .guide-section {
+            margin-bottom: 1.5rem;
+        }
+        .guide-section h5 {
+            color: var(--accent-cyan);
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        .guide-section p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 0.5rem;
+        }
+        .code-example {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 6px;
+            padding: 0.8rem;
+            font-family: inherit;
+            color: var(--primary-green);
+            font-size: 0.85rem;
+            margin: 0.5rem 0;
+        }
+        .status-panel {
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+        }
+        .progress-container {
+            margin-bottom: 2rem;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-green), var(--accent-cyan));
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 4px;
+            position: relative;
+        }
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: progress-shine 2s infinite;
+        }
+        @keyframes progress-shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 0.5rem;
+            font-weight: 600;
+            color: var(--primary-green);
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-green);
+        }
+        .status-value {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+        .achievements {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+            margin: 2rem 0;
+        }
+        .achievement {
+            background: rgba(255, 215, 0, 0.05);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 0.8rem;
+            color: var(--warning);
+            font-size: 0.8rem;
+            opacity: 0.3;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+        }
+        .achievement.unlocked {
+            opacity: 1;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+            border-color: var(--warning);
+            transform: scale(1.02);
+        }
+        .log-panel {
+            background: #000000;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            height: 400px;
+            overflow-y: auto;
+            margin: 2rem;
+            font-size: 0.9rem;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            position: relative;
+            box-shadow:
+                0 0 0 1px var(--primary-green),
+                0 0 10px rgba(0, 255, 136, 0.5),
+                inset 0 0 50px rgba(0, 255, 136, 0.02);
+        }
+        .log-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 25px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+            border-bottom: 1px solid var(--primary-green);
+            z-index: 1;
+        }
+        .log-panel::after {
+            content: '● TERMINAL [ACME-PENTEST-SESSION] - /var/log/cyberops';
+            position: absolute;
+            top: 6px;
+            left: 10px;
+            color: var(--primary-green);
+            font-size: 0.75rem;
+            font-weight: bold;
+            z-index: 2;
+        }
+        .log-content {
+            padding: 30px 0 10px 0;
+            height: 100%;
+            overflow-y: auto;
+        }
+        .log-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+        .log-panel::-webkit-scrollbar-track {
+            background: #000000;
+        }
+        .log-panel::-webkit-scrollbar-thumb {
+            background: var(--primary-green);
+            border-radius: 0;
+        }
+        .log-panel::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-cyan);
+        }
+        .log-entry {
+            margin: 0;
+            padding: 2px 10px;
+            border: none;
+            transition: none;
+            animation: log-typing 0.3s ease-out;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            background: transparent;
+            position: relative;
+            border-left: none;
+        }
+        .log-entry::before {
+            display: none;
+        }
+        @keyframes log-typing {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .log-success {
+            color: var(--primary-green);
+        }
+        .log-error {
+            color: #ff4444;
+        }
+        .log-info {
+            color: var(--accent-cyan);
+        }
+        .log-warning {
+            color: #ffaa00;
+        }
+        .log-ai {
+            color: var(--ai-blue);
+            font-weight: 600;
+        }
+        .cursor-line {
+            display: flex;
+            align-items: center;
+            padding: 2px 10px;
+            color: var(--primary-green);
+        }
+        .cursor-line::after {
+            content: '█';
+            margin-left: 5px;
+            animation: cursor-blink 1s infinite;
+        }
+        @keyframes cursor-blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        @media (max-width: 1200px) {
+            .game-area {
+                grid-template-columns: 1fr;
+            }
+            .status-panel {
+                position: static;
+            }
+            .achievements {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            .container {
+                padding: 1rem;
+            }
+            .game-area {
+                padding: 1rem;
+            }
+            .terminal-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .terminal-controls {
+                width: 100%;
+                justify-content: center;
+            }
+            .achievements {
+                grid-template-columns: 1fr;
+            }
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .site-credit {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            padding: 0.75rem 1rem;
+            margin-top: 1.25rem;
+            opacity: 0.95;
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-grid"></div>
+    <div class="matrix-bg" id="matrixBg"></div>
+    <div class="header fade-in">
+        <h1>🔒 CYBERSEC ACADEMY</h1>
+        <p>Advanced Ethical Hacking Simulator • Academia de Segurança Cibernética</p>
+    </div>
+    <div class="container">
+        <div class="terminal fade-in">
+            <div class="terminal-header">
+                <div class="terminal-title">ACME CORP SECURITY ASSESSMENT</div>
+                <div class="terminal-controls">
+                    <button class="btn btn-ai" id="aiModeBtn" onclick="toggleAIMode()">🤖 Modo IA</button>
+                    <button class="btn btn-beginner" onclick="toggleBeginnerGuide()">🎓 Guia Iniciante</button>
+                    <button class="btn" onclick="showHint()">💡 Dica</button>
+                    <button class="btn" onclick="resetChallenge()">🔄 Reset</button>
+                </div>
+            </div>
+            <div class="game-area">
+                <div class="challenge-panel">
+                    <h3 class="challenge-title">Network Discovery & Reconnaissance</h3>
+                    <p class="challenge-description">
+                        Sua missão é comprometer a infraestrutura da ACME Corp através de técnicas de ethical hacking.
+                        Use ferramentas de reconhecimento para descobrir serviços vulneráveis e obter acesso administrativo total.
+                        Cada nova sessão apresenta uma configuração de rede diferente - adapte sua estratégia!
+                    </p>
+                    <div class="ai-assistant" id="aiAssistant">
+                        <h4>🤖 Assistente IA - Modo Guiado Ativo</h4>
+                        <div class="ai-step-indicator">
+                            <div class="ai-step" id="step1">1</div>
+                            <div class="ai-step" id="step2">2</div>
+                            <div class="ai-step" id="step3">3</div>
+                            <div class="ai-step" id="step4">✓</div>
+                        </div>
+                        <div id="aiContent">
+                            <div class="ai-suggestion">
+                                <strong>📍 Aguardando início...</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="beginner-guide" id="beginnerGuide">
+                        <h4>🎓 Guia Completo do Simulador - Comandos e Parâmetros</h4>
+
+                        <div class="guide-section">
+                            <h5>🔍 Ferramentas Disponíveis</h5>
+                            <p>Este simulador possui 5 ferramentas principais. Selecione uma no campo <strong>"Ferramenta de Reconhecimento"</strong>.</p>
+
+                            <div class="code-example">Nmap</div>
+                            <p>O scanner de rede principal. Use para descobrir hosts, portas, serviços e vulnerabilidades.</p>
+
+                            <div class="code-example">Ping</div>
+                            <p>Testa a conectividade básica com um host alvo.</p>
+
+                            <div class="code-example">Traceroute</div>
+                            <p>Mostra o caminho dos pacotes até o host alvo.</p>
+
+                            <div class="code-example">Netstat</div>
+                            <p>Lista as conexões de rede ativas no sistema local (simulado).</p>
+
+                            <div class="code-example">Exploit</div>
+                            <p>Executa um payload de ataque contra uma vulnerabilidade previamente identificada.</p>
+                        </div>
+
+                        <div class="guide-section">
+                            <h5>⚙️ Parâmetros Suportados para Nmap</h5>
+                            <p>Os parâmetros devem ser inseridos no campo <strong>"Parâmetros Adicionais"</strong>. Alguns parâmetros são cruciais para a detecção de vulnerabilidades.</p>
+
+                            <h5>Modos de Scan</h5>
+                            <div class="code-example">-sn</div>
+                            <p>Ping Scan: Descobre hosts ativos sem escanear portas. Usado em missões "stealth".</p>
+
+                            <div class="code-example">-A</div>
+                            <p>Scan Agressivo: Detecta versões de serviço, sistema operacional e vulnerabilidades. <strong>(Recomendado)</strong></p>
+
+                            <div class="code-example">-sV</div>
+                            <p>Detecção de Versão: Detecta versões dos serviços. Também útil para encontrar vulnerabilidades.</p>
+
+                            <div class="code-example">-O</div>
+                            <p>Detecção de SO: Identifica o sistema operacional do alvo. Usado em missões "advanced".</p>
+
+                            <h5>Parâmetros de Saída (Simulados)</h5>
+                            <div class="code-example">-oN [nome_arquivo]</div>
+                            <p>Salva a saída em formato normal (simulado).</p>
+
+                            <div class="code-example">-oX [nome_arquivo]</div>
+                            <p>Salva a saída em formato XML (simulado).</p>
+
+                            <h5>Outros Parâmetros Úteis</h5>
+                            <div class="code-example">-p [portas]</div>
+                            <p>Especifica portas a serem escaneadas (ex: <code>-p 22,80,443</code> ou <code>-p 1-1000</code>).</p>
+
+                            <div class="code-example">-T [0-5]</div>
+                            <p>Define o tempo de scan (0=Paranóico, 5=Insano). Afeta velocidade apenas.</p>
+                        </div>
+
+                        <div class="guide-section">
+                            <h5>🎯 Metodologia Básica</h5>
+                            <p>Siga estes passos gerais para completar a missão:</p>
+                            <p>1. <strong>Identifique o IP alvo:</strong> O IP correto é mostrado no log inicial.</p>
+                            <p>2. <strong>Realize o reconhecimento:</strong> Use <code>Nmap</code> com <code>-A</code> ou <code>-sV</code> no IP alvo.</p>
+                            <p>3. <strong>Analisar a saída:</strong> Procure por portas abertas e serviços listados.</p>
+                            <p>4. <strong>Identificar Vulnerabilidades:</strong> Se usar <code>-A</code> ou <code>-sV</code>, o simulador mostrará automaticamente vulnerabilidades críticas (especialmente RCE).</p>
+                            <p>5. <strong>Explorar:</strong> Após encontrar uma vulnerabilidade, use a ferramenta <code>Exploit</code> no mesmo IP alvo.</p>
+                        </div>
+
+                        <div class="guide-section">
+                            <h5>📚 Exemplos de Comandos Completos</h5>
+                            <p><strong>Scan completo para descobrir tudo (método mais fácil):</strong></p>
+                            <div class="code-example">
+                                Ferramenta: Nmap<br>
+                                IP: [IP_DO_ALVO]<br>
+                                Parâmetros: -A
+                            </div>
+                            <p><strong>Descobrir hosts ativos (modo stealth):</strong></p>
+                            <div class="code-example">
+                                Ferramenta: Nmap<br>
+                                IP: [IP_REDE].* (ex: 192.168.1.*)<br>
+                                Parâmetros: -sn
+                            </div>
+                            <p><strong>Identificar o sistema operacional (missão advanced):</strong></p>
+                            <div class="code-example">
+                                Ferramenta: Nmap<br>
+                                IP: [IP_DO_ALVO]<br>
+                                Parâmetros: -O
+                            </div>
+                            <p><strong>Scan específico de algumas portas:</strong></p>
+                            <div class="code-example">
+                                Ferramenta: Nmap<br>
+                                IP: [IP_DO_ALVO]<br>
+                                Parâmetros: -p 22,80,443
+                            </div>
+                            <p><strong>Explorar uma vulnerabilidade encontrada:</strong></p>
+                            <div class="code-example">
+                                Ferramenta: Exploit<br>
+                                IP: [IP_DO_ALVO]<br>
+                                Parâmetros: (deixe vazio)
+                            </div>
+                        </div>
+
+                         <div class="guide-section">
+                            <h5>ℹ️ Informações Adicionais</h5>
+                            <p><strong>RCE (Remote Code Execution):</strong> Tipo de vulnerabilidade crítica que permite executar comandos no servidor alvo.</p>
+                            <p><strong>Importante:</strong> Para detectar vulnerabilidades, você <strong>deve</strong> usar <code>-A</code> ou <code>-sV</code> no scan do Nmap.</p>
+                            <p><strong>Dica:</strong> O IP alvo correto sempre aparece na primeira linha do log do terminal.</p>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>🔧 Ferramenta de Reconhecimento:</label>
+                        <select id="toolSelect">
+                            <option value="">Selecione uma ferramenta...</option>
+                            <option value="nmap">Nmap - Network Mapper (Scanner de Rede)</option>
+                            <option value="ping">Ping - Teste de Conectividade</option>
+                            <option value="traceroute">Traceroute - Rastreamento de Rota</option>
+                            <option value="netstat">Netstat - Status de Conexões</option>
+                            <option value="exploit">Exploit - Executar Payload de Ataque</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>🎯 Endereço IP do Alvo:</label>
+                        <input type="text" id="targetIP" placeholder="Digite o IP alvo" />
+                    </div>
+                    <div class="input-group">
+                        <label>⚙️ Parâmetros Adicionais:</label>
+                        <input type="text" id="parameters" placeholder="Ex: -A (scan completo)" />
+                    </div>
+                    <button class="btn" onclick="executeCommand()" id="executeBtn">🚀 Executar Comando</button>
+                    <div class="hint-box" id="hintBox">
+                        <strong>💡 Dica Estratégica:</strong>
+                        <div id="hintContent">
+                            • Comece com Nmap no IP do alvo principal<br>
+                            • Use -A para scan completo (mais fácil)<br>
+                            • Quando encontrar vulnerabilidade RCE, use Exploit<br>
+                            • O IP alvo está no log inicial!
+                        </div>
+                    </div>
+                </div>
+                <div class="status-panel">
+                    <h3 class="challenge-title">Status da Operação</h3>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressBar"></div>
+                        </div>
+                        <div class="progress-text">
+                            Progresso da Missão: <span id="progressText">0%</span>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <span>🔐 Nível de Acesso:</span>
+                        <span class="status-value" id="accessLevel">Visitante</span>
+                    </div>
+                    <div class="status-item">
+                        <span>🚪 Portas Descobertas:</span>
+                        <span class="status-value" id="portsFound">0/5</span>
+                    </div>
+                    <div class="status-item">
+                        <span>⚠️ Vulnerabilidades:</span>
+                        <span class="status-value" id="vulnerabilities">0/3</span>
+                    </div>
+                    <div class="status-item">
+                        <span>⭐ Score Total:</span>
+                        <span class="status-value" id="score">0</span>
+                    </div>
+                    <h4 style="color: var(--warning); margin: 1.5rem 0 1rem 0; font-size: 1rem;">🏆 Conquistas</h4>
+                    <div class="achievements">
+                        <div class="achievement" id="achievement1">🔍 Primeiro Scan</div>
+                        <div class="achievement" id="achievement2">🚪 Porta Descoberta</div>
+                        <div class="achievement" id="achievement3">⚠️ Falha Encontrada</div>
+                        <div class="achievement" id="achievement4">🏆 Acesso Admin</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="log-panel fade-in" id="logPanel">
+            <div class="log-content">
+                <div class="log-entry log-info">[SISTEMA] CYBERSEC ACADEMY TERMINAL v3.0.0 ONLINE</div>
+                <div class="log-entry log-success">[INIT] Dynamic Mission Generator carregado</div>
+                <div class="log-entry log-info">[TARGET] Gerando nova configuração ACME Corp...</div>
+                <div class="log-entry log-warning">[LEGAL] Authorized Penetration Testing Only</div>
+                <div class="cursor-line">root@cyberops:~#</div>
+            </div>
+        </div>
+    </div>
+    <footer class="site-credit">Feito por João Vitor Alves Rodrigues</footer>
+    <script>
+        // === CONFIGURAÇÃO GLOBAL ===
+        const RANGES = ['192.168.1.', '10.0.', '172.16.'];
+        const SERVICE_DB = {
+            '22': ['SSH', 'OpenSSH 7.4p1', 'OpenSSH 8.2p1'],
+            '21': ['FTP', 'vsftpd 2.3.4', 'ProFTPD 1.3.5'],
+            '80': ['HTTP', 'Apache 2.4.29', 'Nginx 1.14.0'],
+            '443': ['HTTPS', 'Apache 2.4.29 SSL', 'Nginx 1.18.0 SSL'],
+            '3306': ['MySQL', 'MySQL 5.7.25', 'MariaDB 10.3'],
+            '8080': ['HTTP-Alt', 'Jenkins 2.150.1', 'Tomcat 9.0.22'],
+            '6379': ['Redis', 'Redis server 5.0.7'],
+            '5432': ['PostgreSQL', 'PostgreSQL 12.3'],
+            '25': ['SMTP', 'Postfix 3.4.14'],
+            '110': ['POP3', 'Dovecot 2.3.7.2'],
+            '143': ['IMAP', 'Dovecot 2.3.7.2'],
+            '53': ['DNS', 'BIND 9.11.5-P4'],
+            '139': ['NetBIOS', 'Samba 4.9.5'],
+            '445': ['SMB', 'Samba 4.9.5'],
+            '3389': ['RDP', 'Windows Server 2019'],
+            '23': ['Telnet', 'Linux telnetd'],
+            '111': ['RPC', 'rpcbind 1.2.5'],
+            '993': ['IMAPS', 'Dovecot 2.3.7.2 SSL'],
+            '995': ['POP3S', 'Dovecot 2.3.7.2 SSL'],
+            '5900': ['VNC', 'TightVNC 1.3.10'],
+            '8443': ['HTTPS-Alt', 'Apache Tomcat 9.0.22 SSL']
+        };
+        const VULNERABILITIES_DB = {
+            'vsftpd 2.3.4': { cve: 'CVE-2011-2523', severity: 'Critical', desc: 'Backdoor Command Execution (RCE)', rce: true },
+            'Jenkins': { cve: 'CVE-2018-1000861', severity: 'Critical', desc: 'Script Console RCE', rce: true },
+            'Redis': { cve: 'CVE-2022-0543', severity: 'Critical', desc: 'Lua Sandbox Escape RCE', rce: true },
+            'Apache': { cve: 'CVE-2021-41773', severity: 'High', desc: 'Path Traversal to RCE', rce: true },
+            'Tomcat': { cve: 'CVE-2020-1938', severity: 'High', desc: 'Ghostcat - AJP File Read/Inclusion', rce: false },
+            'PostgreSQL': { cve: 'CVE-2018-1058', severity: 'Medium', desc: 'Privilege Escalation', rce: false },
+            'Samba': { cve: 'CVE-2017-7494', severity: 'Critical', desc: 'EternalRed - Remote Code Execution', rce: true },
+            'BIND': { cve: 'CVE-2020-8616', severity: 'Medium', desc: 'Denial of Service', rce: false },
+            'Dovecot': { cve: 'CVE-2020-10967', severity: 'Medium', desc: 'Information Disclosure', rce: false },
+            'OpenSSH': { cve: 'CVE-2019-6111', severity: 'Medium', desc: 'Information Disclosure', rce: false },
+            'ProFTPD': { cve: 'CVE-2019-12815', severity: 'High', desc: 'Remote Code Execution', rce: true },
+            'Postfix': { cve: 'CVE-2020-35613', severity: 'High', desc: 'Buffer Overflow', rce: true },
+            'Windows Server': { cve: 'CVE-2019-0708', severity: 'Critical', desc: 'BlueKeep - Remote Code Execution', rce: true },
+            'Linux telnetd': { cve: 'CVE-2020-17453', severity: 'High', desc: 'Authentication Bypass', rce: false },
+            'rpcbind': { cve: 'CVE-2017-8779', severity: 'Medium', desc: 'Denial of Service', rce: false },
+            'TightVNC': { cve: 'CVE-2017-13086', severity: 'High', desc: 'Authentication Bypass', rce: false },
+            'Apache Tomcat': { cve: 'CVE-2020-1938', severity: 'High', desc: 'Ghostcat - AJP File Read/Inclusion', rce: false },
+            'Nginx': { cve: 'CVE-2019-20372', severity: 'Medium', desc: 'Buffer Overflow', rce: false },
+            'MariaDB': { cve: 'CVE-2020-13249', severity: 'Medium', desc: 'Denial of Service', rce: false },
+            'MySQL': { cve: 'CVE-2018-3251', severity: 'Medium', desc: 'Remote Code Execution', rce: false }
+        };
+        // === ESTADO DO JOGO ===
+        let gameState = {
+            progress: 0,
+            accessLevel: 'Visitante',
+            portsFound: 0,
+            vulnerabilities: 0,
+            score: 0,
+            achievements: [],
+            currentMission: null,
+            aiMode: false,
+            aiStep: 0,
+            // Rastreamento detalhado para IA
+            hasScanned: false,
+            scanCount: 0,
+            hasUsedCorrectParams: false,
+            vulnFound: false,
+            exploitReady: false,
+            missionComplete: false,
+            lastCommand: null,
+            commandHistory: [],
+            // Novos estados para aleatoriedade
+            missionType: 'default', // 'default', 'stealth', 'advanced'
+            requiredSteps: [], // Passos específicos necessários para esta missão
+            completedSteps: [], // Passos já concluídos
+            stealthMode: false, // Se o modo stealth está ativo (não usar ping)
+            discoveredHosts: [], // Para modo stealth
+            discoveredPorts: [], // Para tracking de portas descobertas
+            discoveredServices: {}, // Para tracking de serviços descobertos
+            discoveredVulns: [], // Para tracking de vulnerabilidades descobertas
+            advancedMode: false, // Se é uma missão avançada
+            requiredVulnType: null, // Tipo específico de vulnerabilidade necessária
+            targetPort: null, // Porta alvo específica para exploit
+            discoveredOS: null, // OS descoberto
+            osDiscoveryDone: false // Se a descoberta de OS foi feita
+        };
+        // === GERAÇÃO DE MISSÃO COM MAIS VARIEDADE ===
+        function generateMission() {
+            // Escolher tipo de missão aleatoriamente
+            const missionTypes = ['default', 'stealth', 'advanced'];
+            const missionType = missionTypes[Math.floor(Math.random() * missionTypes.length)];
+            const ipRange = RANGES[Math.floor(Math.random() * RANGES.length)];
+            let ip = ipRange + Math.floor(Math.random() * 254 + 1);
+            if (ipRange !== '192.168.1.') {
+                ip += '.' + Math.floor(Math.random() * 254 + 1);
+            }
+            const hostname = 'acme-server-' + Math.floor(Math.random() * 999) + '.corp';
+            // Mais variedade de OS
+            const osOptions = [
+                'Ubuntu 20.04.3 LTS',
+                'CentOS Linux 7.9.2009',
+                'Windows Server 2019 Datacenter',
+                'Debian GNU/Linux 10 (buster)',
+                'Red Hat Enterprise Linux 8.4',
+                'Alpine Linux 3.14.0'
+            ];
+            const os = osOptions[Math.floor(Math.random() * osOptions.length)];
+            // Gerar portas e serviços
+            let ports = [];
+            let services = {};
+            // Sempre incluir pelo menos um serviço vulnerável
+            const vulnerableServices = Object.keys(VULNERABILITIES_DB);
+            const chosenVulnService = vulnerableServices[Math.floor(Math.random() * vulnerableServices.length)];
+            // Encontrar uma porta para este serviço vulnerável
+            let vulnPort = null;
+            for (const [port, serviceList] of Object.entries(SERVICE_DB)) {
+                if (serviceList.includes(chosenVulnService) || serviceList.some(s => chosenVulnService.includes(s.split(' ')[0]))) {
+                    vulnPort = port;
+                    break;
+                }
+            }
+            if (!vulnPort) {
+                // Fallback se não encontrar porta direta
+                const portsList = Object.keys(SERVICE_DB);
+                vulnPort = portsList[Math.floor(Math.random() * portsList.length)];
+            }
+            ports.push(parseInt(vulnPort));
+            services[vulnPort] = chosenVulnService + ' ' + (Math.floor(Math.random() * 10) + 1) + '.' + (Math.floor(Math.random() * 20) + 1);
+            // Adicionar mais portas aleatórias (3-5 adicionais)
+            const allPorts = Object.keys(SERVICE_DB).filter(p => p !== vulnPort);
+            const numAdditionalPorts = 3 + Math.floor(Math.random() * 3); // 3-5 portas adicionais
+            for (let i = 0; i < numAdditionalPorts && allPorts.length > 0; i++) {
+                const randomIndex = Math.floor(Math.random() * allPorts.length);
+                const port = allPorts.splice(randomIndex, 1)[0];
+                ports.push(parseInt(port));
+                const versions = SERVICE_DB[port];
+                services[port] = versions[Math.floor(Math.random() * versions.length)];
+            }
+            // Criar vulnerabilidade
+            const vulnServiceKey = Object.keys(VULNERABILITIES_DB).find(key =>
+                services[vulnPort].includes(key) || key.includes(services[vulnPort].split(' ')[0])
+            ) || chosenVulnService;
+            const vuln = VULNERABILITIES_DB[vulnServiceKey];
+            // Determinar passos necessários com base no tipo de missão
+            let requiredSteps = [];
+            let requiredVulnType = null;
+            let targetPort = vulnPort;
+            if (missionType === 'stealth') {
+                requiredSteps = ['discover_hosts', 'scan_ports', 'identify_services', 'find_vuln', 'exploit'];
+            } else if (missionType === 'advanced') {
+                // Missão avançada: requer descoberta de OS e vulnerabilidade específica
+                requiredSteps = ['scan_os', 'scan_ports', 'identify_services', 'find_vuln', 'exploit'];
+                requiredVulnType = vuln.rce ? 'rce' : 'other';
+            } else {
+                requiredSteps = ['scan_ports', 'identify_services', 'find_vuln', 'exploit'];
+            }
+            return {
+                ip,
+                hostname,
+                os,
+                ports: ports,
+                services,
+                vulnerabilities: [{
+                    ...vuln,
+                    port: vulnPort,
+                    service: services[vulnPort]
+                }],
+                missionType,
+                requiredSteps,
+                requiredVulnType,
+                targetPort
+            };
+        }
+        // === SISTEMA DE IA MELHORADO ===
+        function toggleAIMode() {
+            gameState.aiMode = !gameState.aiMode;
+            const btn = document.getElementById('aiModeBtn');
+            const assistant = document.getElementById('aiAssistant');
+            if (gameState.aiMode) {
+                btn.classList.add('active');
+                assistant.classList.add('active');
+                addLog('🤖 [IA] Modo Assistente IA ATIVADO - Vou te guiar em cada passo!', 'ai');
+                updateAISuggestion(); // Atualiza ao ativar
+            } else {
+                btn.classList.remove('active');
+                assistant.classList.remove('active');
+                addLog('🤖 [IA] Modo Assistente IA DESATIVADO', 'ai');
+            }
+        }
+        function updateAIStepIndicator() {
+            // Limpar todos os estados
+            for (let i = 1; i <= 4; i++) {
+                const step = document.getElementById(`step${i}`);
+                if (step) {
+                    step.classList.remove('active', 'completed');
+                }
+            }
+            // Contar passos concluídos
+            let completedCount = 0;
+            const steps = gameState.currentMission.requiredSteps;
+            // Marcar passos completados
+            if (gameState.hasScanned) completedCount++;
+            if (gameState.portsFound > 0) completedCount++;
+            if (gameState.vulnFound) completedCount++;
+            if (gameState.missionComplete) completedCount++;
+            // Marcar visualmente os passos
+            if (gameState.hasScanned) {
+                document.getElementById('step1').classList.add('completed');
+            }
+            if (gameState.portsFound > 0) {
+                document.getElementById('step2').classList.add('completed');
+            }
+            if (gameState.vulnFound) {
+                document.getElementById('step3').classList.add('completed');
+            }
+            if (gameState.missionComplete) {
+                document.getElementById('step4').classList.add('completed');
+            }
+            // Marcar passo atual
+            if (!gameState.hasScanned) {
+                document.getElementById('step1').classList.add('active');
+            } else if (gameState.portsFound === 0) {
+                document.getElementById('step1').classList.add('active');
+            } else if (!gameState.vulnFound) {
+                document.getElementById('step2').classList.add('active');
+            } else if (!gameState.missionComplete) {
+                document.getElementById('step3').classList.add('active');
+            } else {
+                document.getElementById('step4').classList.add('active');
+            }
+        }
+        function updateAISuggestion() {
+            if (!gameState.aiMode) return;
+            const aiContent = document.getElementById('aiContent');
+            let suggestion = '';
+            updateAIStepIndicator();
+            // Análise inteligente do estado atual e tipo de missão
+            if (gameState.missionComplete) {
+                // Missão completa
+                suggestion = `
+                    <div class="ai-suggestion">
+                        <strong>🎉 MISSÃO COMPLETA COM SUCESSO!</strong><br><br>
+                        Você conseguiu acesso root ao servidor!<br>
+                        Score Final: <code>${gameState.score}</code><br><br>
+                        <strong>Resumo do que você aprendeu:</strong><br>
+                        ${gameState.currentMission.missionType === 'stealth' ?
+                            '✅ Como fazer reconhecimento discreto sem alertar o alvo<br>' : ''}
+                        ${gameState.currentMission.missionType === 'advanced' ?
+                            '✅ Como identificar o sistema operacional do alvo<br>' : ''}
+                        ✅ Como escanear portas e serviços com Nmap<br>
+                        ✅ Como identificar vulnerabilidades críticas<br>
+                        ✅ Como explorar falhas para obter acesso root<br><br>
+                        <em>Clique em Reset para uma nova missão com configuração diferente!</em>
+                    </div>
+                `;
+            } else if (gameState.currentMission.missionType === 'stealth' && !gameState.hasScanned && gameState.discoveredHosts.length === 0) {
+                // Missão stealth - primeiro passo
+                suggestion = `
+                    <div class="ai-suggestion">
+                        <strong>📍 Etapa 1: Reconhecimento Discreto (Stealth Mode)</strong><br><br>
+                        Esta é uma missão stealth! Você precisa descobrir hosts ativos sem ser detectado.<br><br>
+                        <strong>Instruções passo a passo:</strong><br>
+                        1️⃣ Na <strong>Ferramenta</strong>, selecione: <code>Nmap</code><br>
+                        2️⃣ No <strong>IP do Alvo</strong>, digite: <code>${gameState.currentMission.ip.split('.').slice(0, 3).join('.')}.*</code><br>
+                        3️⃣ Nos <strong>Parâmetros</strong>, digite: <code>-sn</code><br>
+                        4️⃣ Clique em <strong>Executar Comando</strong><br><br>
+                        <em>💡 O parâmetro -sn faz descoberta de hosts sem scan de portas!</em>
+                    </div>
+                `;
+            } else if (gameState.currentMission.missionType === 'advanced' && !gameState.osDiscoveryDone) {
+                // Missão avançada - descobrir OS
+                suggestion = `
+                    <div class="ai-suggestion">
+                        <strong>📍 Etapa 1: Identificação do Sistema Operacional</strong><br><br>
+                        Esta é uma missão avançada! Primeiro, precisamos identificar o sistema operacional.<br><br>
+                        <strong>Instruções passo a passo:</strong><br>
+                        1️⃣ Na <strong>Ferramenta</strong>, selecione: <code>Nmap</code><br>
+                        2️⃣ No <strong>IP do Alvo</strong>, digite: <code>${gameState.currentMission.ip}</code><br>
+                        3️⃣ Nos <strong>Parâmetros</strong>, digite: <code>-O</code><br>
+                        4️⃣ Clique em <strong>Executar Comando</strong><br><br>
+                        <em>💡 O parâmetro -O detecta o sistema operacional do alvo!</em>
+                    </div>
+                `;
+            } else if (!gameState.hasScanned) {
+                // Etapa 1: Nenhum scan feito ainda (modo padrão)
+                suggestion = `
+                    <div class="ai-suggestion">
+                        <strong>📍 Etapa 1: Reconhecimento Inicial</strong><br><br>
+                        Primeiro, você precisa descobrir quais serviços estão rodando no servidor alvo.<br><br>
+                        <strong>Instruções passo a passo:</strong><br>
+                        1️⃣ Na <strong>Ferramenta</strong>, selecione: <code>Nmap</code><br>
+                        2️⃣ No <strong>IP do Alvo</strong>, digite: <code>${gameState.currentMission.ip}</code><br>
+                        3️⃣ Nos <strong>Parâmetros</strong>, digite: <code>-A</code><br>
+                        4️⃣ Clique em <strong>Executar Comando</strong><br><br>
+                        <em>💡 O parâmetro -A faz um scan completo que detecta portas, serviços e vulnerabilidades!</em>
+                    </div>
+                `;
+            } else if (gameState.hasScanned && !gameState.hasUsedCorrectParams) {
+                // Fez scan mas sem parâmetros corretos
+                suggestion = `
+                    <div class="ai-suggestion">
+                        <strong>⚠️ Scan Incompleto Detectado</strong><br><br>
+                        Você fez um scan, mas precisa usar os parâmetros corretos para detectar vulnerabilidades!<br><br>
+                        <strong>Correção necessária:</strong><br>
+                        ❌ Você ${gameState.scanCount > 1 ? 'já tentou ' + gameState.scanCount + ' vezes' : 'não usou'} o parâmetro correto<br>
+                        ✅ Use o parâmetro <code>-A</code> (maiúsculo) no Nmap<br><br>
+                        <strong>Execute novamente:</strong><br>
+                        1️⃣ Ferramenta: <code>Nmap</code><br>
+                        2️⃣ IP: <code>${gameState.currentMission.ip}</code><br>
+                        3️⃣ Parâmetros: <code>-A</code> ← IMPORTANTE!<br>
+                        4️⃣ Clique em Executar<br><br>
+                        <em>Sem o -A, você não detectará as vulnerabilidades!</em>
+                    </div>
+                `;
+            } else if (gameState.hasUsedCorrectParams && !gameState.vulnFound) {
+                // Usou parâmetros mas ainda não detectou vulnerabilidade
+                // Esta verificação agora é mais precisa
+                const totalPorts = gameState.currentMission.ports.length;
+                const scannedPorts = gameState.discoveredPorts.length;
+                if (scannedPorts < totalPorts) {
+                     suggestion = `
+                        <div class="ai-suggestion">
+                            <strong>🔄 Processando Resultados...</strong><br><br>
+                            O scan está em andamento (${scannedPorts}/${totalPorts} portas verificadas).<br>
+                            Aguarde a detecção completa das portas e serviços.<br><br>
+                            <em>Aguarde o scan terminar completamente antes de prosseguir!</em>
+                        </div>
+                    `;
+                } else {
+                    // Todas as portas foram escaneadas, mas nenhuma vulnerabilidade encontrada
+                    suggestion = `
+                        <div class="ai-suggestion">
+                            <strong>🔄 Processando Resultados...</strong><br><br>
+                            Scan completo. Verificando serviços em busca de vulnerabilidades...<br>
+                            Se nenhuma vulnerabilidade aparecer, verifique se usou os parâmetros corretos.<br><br>
+                            <em>Aguarde a análise finalizar!</em>
+                        </div>
+                    `;
+                }
+            } else if (gameState.vulnFound && !gameState.exploitReady) {
+                // Vulnerabilidade encontrada mas não tentou explorar
+                suggestion = `
+                    <div class="ai-suggestion">
+                        <strong>🎯 Etapa 3: Vulnerabilidade Crítica Detectada!</strong><br><br>
+                        Excelente! Você encontrou uma vulnerabilidade ${gameState.currentMission.vulnerabilities[0].rce ? 'RCE (Remote Code Execution)' : 'crítica'}!<br>
+                        Agora é hora de explorar essa falha para obter acesso root.<br><br>
+                        <strong>Execute o exploit:</strong><br>
+                        1️⃣ Na <strong>Ferramenta</strong>, selecione: <code>Exploit</code><br>
+                        2️⃣ Mantenha o <strong>IP</strong>: <code>${gameState.currentMission.ip}</code><br>
+                        3️⃣ <strong>Parâmetros</strong>: deixe vazio ou digite <code>${gameState.currentMission.vulnerabilities[0].rce ? 'RCE' : 'EXPLOIT'}</code><br>
+                        4️⃣ Clique em <strong>Executar Comando</strong><br><br>
+                        <em>🔥 Isso executará o payload e dará acesso root ao servidor!</em>
+                    </div>
+                `;
+                gameState.exploitReady = true; // Define aqui para evitar loops
+            } else if (gameState.exploitReady && !gameState.missionComplete) {
+                // Pronto para explorar mas ainda não executou
+                suggestion = `
+                    <div class="ai-suggestion">
+                        <strong>⚡ Tudo Pronto para o Ataque Final!</strong><br><br>
+                        A vulnerabilidade está confirmada e pronta para ser explorada!<br><br>
+                        <strong>Último passo - Execute o exploit:</strong><br>
+                        1️⃣ Ferramenta: <code>Exploit</code> ← IMPORTANTE!<br>
+                        2️⃣ IP: <code>${gameState.currentMission.ip}</code><br>
+                        3️⃣ Parâmetros: (pode deixar vazio)<br>
+                        4️⃣ Clique em <strong>Executar</strong><br><br>
+                        <em>🎯 Você está a um passo de obter acesso root!</em>
+                    </div>
+                `;
+            } else {
+                // Estado não mapeado - fallback
+                suggestion = `
+                    <div class="ai-suggestion">
+                        <strong>📊 Analisando situação...</strong><br><br>
+                        Estado atual:<br>
+                        • Scan realizado: ${gameState.hasScanned ? '✅' : '❌'}<br>
+                        • Portas encontradas: ${gameState.portsFound}<br>
+                        • Vulnerabilidades: ${gameState.vulnerabilities}<br>
+                        • Pronto para exploit: ${gameState.exploitReady ? '✅' : '❌'}<br><br>
+                        ${!gameState.hasScanned ?
+                            `<strong>Próximo passo:</strong> Use Nmap com -A no IP ${gameState.currentMission.ip}` :
+                          gameState.vulnFound && !gameState.missionComplete ?
+                            `<strong>Próximo passo:</strong> Use a ferramenta Exploit` :
+                            `<strong>Próximo passo:</strong> Continue explorando com Nmap -A`
+                        }
+                    </div>
+                `;
+            }
+            aiContent.innerHTML = suggestion;
+        }
+        // === FUNÇÕES PRINCIPAIS ===
+        function addLog(message, type = 'info') {
+            const logContent = document.querySelector('.log-content');
+            const cursorLine = document.querySelector('.cursor-line');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logContent.insertBefore(logEntry, cursorLine);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+        function updateUI() {
+            document.getElementById('progressBar').style.width = `${gameState.progress}%`;
+            document.getElementById('progressText').textContent = `${gameState.progress}%`;
+            document.getElementById('accessLevel').textContent = gameState.accessLevel;
+            document.getElementById('portsFound').textContent = `${gameState.portsFound}/5`;
+            document.getElementById('vulnerabilities').textContent = `${gameState.vulnerabilities}/3`;
+            document.getElementById('score').textContent = gameState.score.toLocaleString();
+        }
+        function unlockAchievement(id, name) {
+            if (!gameState.achievements.includes(id)) {
+                gameState.achievements.push(id);
+                const achievement = document.getElementById(id);
+                achievement.classList.add('unlocked');
+                addLog(`🏆 Conquista Desbloqueada: ${name}`, 'success');
+                gameState.score += 250;
+            }
+        }
+        function executeCommand() {
+            const tool = document.getElementById('toolSelect').value;
+            const target = document.getElementById('targetIP').value.trim();
+            const params = document.getElementById('parameters').value.trim();
+            if (!tool || !target) {
+                addLog('❌ ERRO: Selecione uma ferramenta e especifique um alvo', 'error');
+                if (gameState.aiMode) {
+                    addLog('🤖 [IA] Você precisa preencher todos os campos! Veja as instruções acima.', 'ai');
+                }
+                return;
+            }
+            // Rastrear comando
+            gameState.lastCommand = { tool, target, params };
+            gameState.commandHistory.push(gameState.lastCommand);
+            const executeBtn = document.getElementById('executeBtn');
+            executeBtn.disabled = true;
+            executeBtn.textContent = '⏳ Executando...';
+            addLog(`🔧 Executando: ${tool.toUpperCase()} ${target} ${params}`, 'info');
+            const delay = tool === 'nmap' ? 2500 : tool === 'exploit' ? 3500 : 1500;
+            setTimeout(() => {
+                simulateCommand(tool, target, params);
+                executeBtn.disabled = false;
+                executeBtn.textContent = '🚀 Executar Comando';
+                // Atualizar IA após comando (já está aqui, mas as mudanças de estado internas também a atualizam)
+            }, delay);
+        }
+        function simulateCommand(tool, target, params) {
+            const mission = gameState.currentMission;
+            // Verificação especial para modo stealth
+            if (mission.missionType === 'stealth' && tool === 'nmap' && params.includes('-sn')) {
+                simulateStealthDiscovery(target, params, mission);
+                return;
+            }
+            // Verificação especial para modo avançado - descoberta de OS
+            if (mission.missionType === 'advanced' && tool === 'nmap' && params.includes('-O')) {
+                simulateOSDiscovery(target, params, mission);
+                return;
+            }
+            if (mission.ip !== target && !target.endsWith('.*')) {
+                addLog(`❌ Host ${target} não encontrado`, 'error');
+                addLog(`💡 Dica: O IP correto é ${mission.ip}`, 'warning');
+                if (gameState.aiMode) {
+                    addLog(`🤖 [IA] Use exatamente este IP: ${mission.ip}`, 'ai');
+                }
+                return;
+            }
+            if (gameState.achievements.length === 0) {
+                unlockAchievement('achievement1', 'Primeiro Scan');
+            }
+            gameState.score += 50;
+            switch (tool) {
+                case 'nmap':
+                    simulateNmap(target, params, mission);
+                    break;
+                case 'exploit':
+                    simulateExploit(target, mission);
+                    break;
+                case 'ping':
+                    simulatePing(target, mission);
+                    break;
+                case 'traceroute':
+                    simulateTraceroute(target);
+                    break;
+                case 'netstat':
+                    simulateNetstat(mission);
+                    break;
+            }
+            updateGameProgress();
+            updateUI();
+        }
+        function simulateStealthDiscovery(target, params, mission) {
+            addLog(`🔍 Iniciando descoberta de hosts (stealth mode)...`, 'info');
+            setTimeout(() => {
+                addLog(`✅ Host ativo encontrado: ${mission.ip}`, 'success');
+                gameState.discoveredHosts.push(mission.ip);
+                gameState.score += 100;
+                addLog(`💡 Agora faça scan de portas no host descoberto`, 'info');
+                if (gameState.aiMode) {
+                    setTimeout(() => {
+                        addLog('🤖 [IA] Ótimo! Agora faça um scan de portas no IP descoberto usando -A', 'ai');
+                    }, 500);
+                    // Atualizar IA após descoberta de host
+                    setTimeout(updateAISuggestion, 600);
+                }
+            }, 1500);
+        }
+        function simulateOSDiscovery(target, params, mission) {
+            addLog(`🔍 Detectando sistema operacional...`, 'info');
+            setTimeout(() => {
+                addLog(`🖥️  Sistema operacional identificado: ${mission.os}`, 'success');
+                gameState.discoveredOS = mission.os;
+                gameState.osDiscoveryDone = true;
+                gameState.score += 150;
+                addLog(`💡 Agora faça scan de portas e serviços`, 'info');
+                if (gameState.aiMode) {
+                    setTimeout(() => {
+                        addLog('🤖 [IA] Perfeito! Agora continue com scan de portas usando -A', 'ai');
+                    }, 500);
+                    // Atualizar IA após descoberta de OS
+                    setTimeout(updateAISuggestion, 600);
+                }
+            }, 2000);
+        }
+        function simulateNmap(target, params, mission) {
+            gameState.hasScanned = true;
+            gameState.scanCount++;
+            addLog(`🔍 Starting Nmap scan on ${target}...`, 'info');
+            addLog(`📊 Host is UP - ${mission.hostname}`, 'success');
+            // Verificar se usou parâmetros corretos
+            const hasCorrectParams = params.includes('-A') || params.includes('-sV');
+            gameState.hasUsedCorrectParams = hasCorrectParams;
+            if (hasCorrectParams) {
+                addLog(`🖥️  OS: ${mission.os}`, 'info');
+                gameState.osDiscoveryDone = true;
+                gameState.discoveredOS = mission.os;
+            }
+
+            // Verificar parâmetros de saída para realismo
+            let outputMessage = '';
+            if (params.includes('-oN')) {
+                const match = params.match(/-oN\s+([^\s]+)/);
+                const filename = match ? match[1] : 'nmap_output.txt';
+                outputMessage = `\n💾 Resultados salvos em formato normal em '${filename}'`;
+            } else if (params.includes('-oX')) {
+                const match = params.match(/-oX\s+([^\s]+)/);
+                const filename = match ? match[1] : 'nmap_output.xml';
+                outputMessage = `\n💾 Resultados salvos em formato XML em '${filename}'`;
+            }
+
+            // Embaralhar portas para simular variação
+            const shuffledPorts = [...mission.ports].sort(() => Math.random() - 0.5);
+            shuffledPorts.forEach((port, i) => {
+                setTimeout(() => {
+                    const service = mission.services[port];
+                    addLog(`✅ Port ${port}/tcp OPEN - ${service}`, 'success');
+                    gameState.portsFound = Math.min(gameState.portsFound + 1, 5);
+                    gameState.discoveredPorts.push(port);
+                    gameState.discoveredServices[port] = service;
+                    gameState.score += 75;
+                    if (gameState.portsFound === 1) {
+                        unlockAchievement('achievement2', 'Primeira Porta');
+                    }
+                    // Detectar vulnerabilidade APENAS com parâmetros corretos
+                    if (hasCorrectParams) {
+                        const vuln = mission.vulnerabilities.find(v => v.port == port);
+                        if (vuln && !gameState.discoveredVulns.includes(port)) {
+                            setTimeout(() => {
+                                addLog(`⚠️  VULNERABILIDADE CRÍTICA DETECTADA!`, 'error');
+                                addLog(`🔴 ${vuln.cve}: ${vuln.desc}`, 'error');
+                                addLog(`🚨 ${vuln.rce ? 'RCE (Remote Code Execution)' : 'Vulnerabilidade crítica'} disponível na porta ${port}!`, 'error');
+                                gameState.vulnerabilities++;
+                                gameState.vulnFound = true;
+                                gameState.discoveredVulns.push(port);
+                                gameState.score += 300;
+                                if (gameState.vulnerabilities === 1) {
+                                    unlockAchievement('achievement3', 'Vulnerabilidade Encontrada');
+                                }
+                                if (gameState.aiMode) {
+                                    setTimeout(() => {
+                                        addLog(`🤖 [IA] PERFEITO! Vulnerabilidade ${vuln.rce ? 'RCE' : 'crítica'} encontrada! Agora use a ferramenta Exploit!`, 'ai');
+                                    }, 500);
+                                    // 🚀 Atualizar IA quando vulnerabilidade é encontrada
+                                    updateAISuggestion();
+                                }
+                            }, 1000);
+                        }
+                    }
+                }, (i + 1) * 600);
+            });
+            setTimeout(() => {
+                addLog(`📈 Scan completo: ${shuffledPorts.length} portas abertas encontradas`, 'success');
+                if (outputMessage) {
+                    addLog(outputMessage, 'info');
+                }
+                if (!hasCorrectParams) {
+                    addLog(`💡 IMPORTANTE: Use o parâmetro -A para detectar vulnerabilidades!`, 'warning');
+                    if (gameState.aiMode) {
+                        addLog('🤖 [IA] Você esqueceu de usar -A! Execute novamente com este parâmetro.', 'ai');
+                    }
+                }
+                // Atualizar IA após o scan completo
+                if (gameState.aiMode) {
+                   setTimeout(updateAISuggestion, 500);
+                }
+            }, shuffledPorts.length * 600 + 500);
+        }
+        function simulateExploit(target, mission) {
+            if (!gameState.vulnFound) {
+                addLog(`❌ Nenhuma vulnerabilidade conhecida. Faça um scan completo primeiro!`, 'error');
+                if (gameState.aiMode) {
+                    addLog('🤖 [IA] Você precisa primeiro descobrir uma vulnerabilidade! Use Nmap com -A', 'ai');
+                }
+                return;
+            }
+            addLog(`🚀 Iniciando exploit framework...`, 'warning');
+            addLog(`🎯 Target: ${target}`, 'info');
+            addLog(`⚙️  Payload: ${gameState.currentMission.vulnerabilities[0].rce ? 'linux/x64/shell_reverse_tcp' : 'generic/exploit'}`, 'warning');
+            setTimeout(() => {
+                addLog(`🔥 Enviando payload...`, 'warning');
+                setTimeout(() => {
+                    addLog(`✅ EXPLOIT EXECUTADO COM SUCESSO!`, 'success');
+                    addLog(`🎉 Shell reverso estabelecido`, 'success');
+                    addLog(`👤 whoami: root`, 'success');
+                    addLog(`🔓 ACESSO ROOT OBTIDO!`, 'success');
+                    gameState.accessLevel = '🔓 Root Access';
+                    gameState.score += 1000;
+                    gameState.progress = 100;
+                    gameState.missionComplete = true;
+                    unlockAchievement('achievement4', 'Root Access!');
+                    addLog(`🏆 MISSÃO COMPLETA! Score: ${gameState.score}`, 'success');
+                    if (gameState.aiMode) {
+                        setTimeout(() => {
+                            addLog(`🤖 [IA] PARABÉNS! Você completou a missão ${gameState.currentMission.missionType} com sucesso! 🎉`, 'ai');
+                            // 🚀 Atualizar IA quando missão é completada
+                            updateAISuggestion();
+                        }, 500);
+                    }
+                    updateUI();
+                }, 1500);
+            }, 1000);
+        }
+        function simulatePing(target, mission) {
+            // Em modo stealth, ping pode ser detectado
+            if (gameState.currentMission.missionType === 'stealth') {
+                addLog(`⚠️  Aviso: Ping pode alertar sistemas de segurança em modo stealth`, 'warning');
+            }
+            addLog(`📡 PING ${mission.hostname} (${mission.ip})`, 'info');
+            for (let i = 1; i <= 4; i++) {
+                setTimeout(() => {
+                    addLog(`Reply from ${mission.ip}: bytes=32 time=${Math.floor(Math.random() * 10 + 1)}ms TTL=64`, 'success');
+                }, i * 300);
+            }
+            // Mensagem realista para ping
+            addLog(`Ping statistics for ${mission.ip}:`, 'info');
+            addLog(`    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),`, 'info');
+            addLog(`Approximate round trip times in milli-seconds:`, 'info');
+            addLog(`    Minimum = ${Math.floor(Math.random() * 5 + 1)}ms, Maximum = ${Math.floor(Math.random() * 15 + 10)}ms, Average = ${Math.floor(Math.random() * 10 + 5)}ms`, 'info');
+
+            if (gameState.aiMode && !gameState.hasScanned) {
+                setTimeout(() => {
+                    addLog('🤖 [IA] Ping confirmou que o host está ativo! Agora use Nmap com -A para descobrir serviços.', 'ai');
+                }, 1500);
+                 // Atualizar IA após ping
+                setTimeout(updateAISuggestion, 1600);
+            }
+        }
+        function simulateTraceroute(target) {
+            addLog(`🗺️  Traceroute to ${target}`, 'info');
+            const hops = ['192.168.1.1', '10.0.0.1', target];
+            hops.forEach((ip, i) => {
+                setTimeout(() => {
+                    addLog(`${i + 1}  ${ip}  ${Math.floor(Math.random() * 50 + 1)}ms`, 'info');
+                }, (i + 1) * 400);
+            });
+            setTimeout(() => {
+                 addLog(`Trace complete.`, 'info');
+                 // Atualizar IA após traceroute
+                 if (gameState.aiMode) {
+                    setTimeout(updateAISuggestion, 500);
+                 }
+            }, hops.length * 400 + 500);
+        }
+        function simulateNetstat(mission) {
+            addLog(`📊 Active connections on localhost:`, 'info');
+            setTimeout(() => {
+                // Embaralhar portas para variação
+                const shuffledPorts = [...mission.ports].sort(() => Math.random() - 0.5);
+                shuffledPorts.forEach(port => {
+                    // Simular diferentes estados de conexão
+                    const states = ['LISTENING', 'ESTABLISHED', 'TIME_WAIT'];
+                    const state = states[Math.floor(Math.random() * states.length)];
+                    addLog(`TCP    0.0.0.0:${port}    0.0.0.0:0    ${state}`, 'success');
+                });
+                addLog(`UDP    0.0.0.0:${Math.floor(Math.random() * 1000 + 1000)}    *:*`, 'success');
+                 // Atualizar IA após netstat
+                 if (gameState.aiMode) {
+                    setTimeout(updateAISuggestion, 500);
+                 }
+            }, 500);
+        }
+        function updateGameProgress() {
+            const total = 15;
+            const completed = (gameState.portsFound * 2) + (gameState.vulnerabilities * 4) + (gameState.achievements.length * 2);
+            gameState.progress = Math.min(Math.round((completed / total) * 100), 100);
+            if (gameState.vulnerabilities > 0 && gameState.portsFound >= 3) {
+                gameState.accessLevel = '⚡ Power User';
+            }
+            if (gameState.vulnFound) {
+                gameState.accessLevel = '🔐 Exploit Ready';
+            }
+        }
+        function showHint() {
+            const box = document.getElementById('hintBox');
+            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+            addLog('💡 Dica revelada', 'info');
+            // Atualizar dica baseada no progresso e tipo de missão
+            const hint = document.getElementById('hintContent');
+            if (gameState.currentMission.missionType === 'stealth' && gameState.discoveredHosts.length === 0) {
+                hint.innerHTML = `• Esta é uma missão stealth! Use Nmap com -sn para descobrir hosts<br>• Exemplo: nmap -sn ${gameState.currentMission.ip.split('.').slice(0, 3).join('.')}.*`;
+            } else if (gameState.currentMission.missionType === 'advanced' && !gameState.osDiscoveryDone) {
+                hint.innerHTML = `• Esta é uma missão avançada! Descubra o OS primeiro<br>• Use: nmap -O ${gameState.currentMission.ip}`;
+            } else if (!gameState.hasScanned) {
+                hint.innerHTML = `• Use Nmap com -A no IP: ${gameState.currentMission.ip}<br>• Isso detectará tudo automaticamente!`;
+            } else if (!gameState.vulnFound) {
+                hint.innerHTML = `• Você precisa usar o parâmetro -A no Nmap<br>• Isso detectará vulnerabilidades automaticamente`;
+            } else if (gameState.vulnFound && !gameState.missionComplete) {
+                hint.innerHTML = `• Agora use a ferramenta Exploit!<br>• Mantenha o mesmo IP e execute`;
+            } else {
+                hint.innerHTML = `• Missão completa! Clique em Reset para novo desafio`;
+            }
+        }
+        function toggleBeginnerGuide() {
+            const guide = document.getElementById('beginnerGuide');
+            guide.style.display = guide.style.display === 'block' ? 'none' : 'block';
+            addLog('📖 Guia do iniciante ' + (guide.style.display === 'block' ? 'aberto' : 'fechado'), 'info');
+        }
+        function resetChallenge() {
+            if (!confirm('🔄 Resetar todo o progresso e gerar nova missão?')) return;
+            // Manter estado do modo IA
+            const aiModeActive = gameState.aiMode;
+            gameState = {
+                progress: 0,
+                accessLevel: 'Visitante',
+                portsFound: 0,
+                vulnerabilities: 0,
+                score: 0,
+                achievements: [],
+                currentMission: generateMission(),
+                aiMode: aiModeActive,
+                aiStep: 0,
+                hasScanned: false,
+                scanCount: 0,
+                hasUsedCorrectParams: false,
+                vulnFound: false,
+                exploitReady: false,
+                missionComplete: false,
+                lastCommand: null,
+                commandHistory: [],
+                // Resetar novos estados
+                missionType: 'default',
+                requiredSteps: [],
+                completedSteps: [],
+                stealthMode: false,
+                discoveredHosts: [],
+                discoveredPorts: [],
+                discoveredServices: {},
+                discoveredVulns: [],
+                advancedMode: false,
+                requiredVulnType: null,
+                targetPort: null,
+                discoveredOS: null,
+                osDiscoveryDone: false
+            };
+            document.getElementById('toolSelect').value = '';
+            document.getElementById('targetIP').value = '';
+            document.getElementById('parameters').value = '';
+            document.querySelectorAll('.achievement').forEach(el => el.classList.remove('unlocked'));
+            const logContent = document.querySelector('.log-content');
+            logContent.innerHTML = `
+                <div class="log-entry log-info">[SISTEMA] Nova missão gerada!</div>
+                <div class="log-entry log-success">[TARGET] IP do alvo: ${gameState.currentMission.ip}</div>
+                <div class="log-entry log-warning">[INFO] Tipo de missão: ${gameState.currentMission.missionType}</div>
+                <div class="log-entry log-info">[READY] Sistema pronto para teste de penetração</div>
+                <div class="cursor-line">root@cyberops:~#</div>
+            `;
+            document.getElementById('hintBox').style.display = 'none';
+            updateUI();
+            if (gameState.aiMode) {
+                updateAISuggestion();
+            }
+        }
+        function createMatrixEffect() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            canvas.style.position = 'fixed';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.zIndex = '-1';
+            canvas.style.opacity = '0.06';
+            document.getElementById('matrixBg').appendChild(canvas);
+            const columns = Math.floor(canvas.width / 20);
+            const drops = Array(columns).fill(1);
+            function draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#00ff88';
+                ctx.font = '14px monospace';
+                for (let i = 0; i < drops.length; i++) {
+                    const text = Math.random() > 0.5 ? '0' : '1';
+                    ctx.fillText(text, i * 20, drops[i] * 20);
+                    if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            }
+            setInterval(draw, 50);
+        }
+        // === INICIALIZAÇÃO ===
+        document.addEventListener('DOMContentLoaded', () => {
+            gameState.currentMission = generateMission();
+            updateUI();
+            createMatrixEffect();
+            setTimeout(() => {
+                addLog(`🎯 IP do alvo detectado: ${gameState.currentMission.ip}`, 'success');
+                addLog(`💡 Tipo de missão: ${gameState.currentMission.missionType}`, 'info');
+                addLog(`💡 Dica: Comece com Nmap -A para fazer um scan completo`, 'info');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
